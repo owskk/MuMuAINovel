@@ -2,17 +2,14 @@ name: Build Frontend and Push Dist
 
 on:
   push:
-    branches: [ "main" ] # 当 main 分支有变动时触发
-    # 忽略 dist 目录的变动，防止陷入“推送 dist -> 触发构建 -> 推送 dist”的死循环
+    branches: [ "main" ]
     paths-ignore:
-      - 'backend/static/**'
-      - 'frontend/dist/**'
+      - 'static/**' # 忽略存放打包产物的文件夹
+      - 'README.md'
 
 jobs:
   build-frontend:
     runs-on: ubuntu-latest
-    
-    # 赋予 Action 写入仓库的权限
     permissions:
       contents: write
 
@@ -20,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 获取完整历史，方便提交
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -29,35 +26,33 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install and Build
         working-directory: ./frontend
         run: |
           npm config set registry https://registry.npmmirror.com
           npm install
-
-      - name: Build frontend
-        working-directory: ./frontend
-        run: |
-          # 确保 Vite 输出到 dist 目录
           npm run build
 
-      - name: Sync dist to backend static folder
+      - name: Sync dist to static folder
         run: |
-          # 创建后端静态资源目录（如果不存在）
-          mkdir -p backend/static
-          # 清空旧文件并拷贝新文件
-          rm -rf backend/static/*
-          cp -r frontend/dist/* backend/static/
+          # 1. 在根目录创建 static 文件夹（这是后端通常寻找的路径）
+          mkdir -p static
+          # 2. 清空并拷贝
+          rm -rf static/*
+          cp -r frontend/dist/* static/
 
       - name: Commit and Push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add backend/static/
-          # 检查是否有文件变动，避免没有变动时报错
+          
+          # 强制添加 static 文件夹（即使它在 .gitignore 里）
+          git add -f static/ 
+          
           if git diff --quiet && git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "没有静态资源变动"
           else
-            git commit -m "chore: auto-update frontend dist [skip ci]"
+            # 加上 [skip ci] 防止触发自身
+            git commit -m "chore: 自动更新前端产物 [skip ci]"
             git push
           fi
