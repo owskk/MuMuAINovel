@@ -3,8 +3,9 @@ name: Build Frontend and Push Dist
 on:
   push:
     branches: [ "main" ]
+    # 忽略 static 目录，防止 Actions 自我触发死循环
     paths-ignore:
-      - 'static/**' # 忽略存放打包产物的文件夹
+      - 'static/**'
       - 'README.md'
 
 jobs:
@@ -26,33 +27,43 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install and Build
+      - name: Install and Build Frontend
         working-directory: ./frontend
         run: |
           npm config set registry https://registry.npmmirror.com
           npm install
+          # 运行构建，Vite 可能会输出到 frontend/dist 或 backend/static
           npm run build
 
-      - name: Sync dist to static folder
+      - name: Sync Artifacts to Root Static
         run: |
-          # 1. 在根目录创建 static 文件夹（这是后端通常寻找的路径）
+          # 创建根目录 static 文件夹
           mkdir -p static
-          # 2. 清空并拷贝
-          rm -rf static/*
-          cp -r frontend/dist/* static/
+          
+          # 自动寻找编译产物（适配 Vite 不同配置）
+          if [ -d "backend/static" ] && [ "$(ls -A backend/static)" ]; then
+            echo "Found artifacts in backend/static"
+            cp -r backend/static/* static/
+          elif [ -d "frontend/dist" ] && [ "$(ls -A frontend/dist)" ]; then
+            echo "Found artifacts in frontend/dist"
+            cp -r frontend/dist/* static/
+          else
+            echo "Error: No build artifacts found!"
+            exit 1
+          fi
 
-      - name: Commit and Push changes
+      - name: Commit and Push
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # 强制添加 static 文件夹（即使它在 .gitignore 里）
-          git add -f static/ 
+          # 强制添加 static 目录
+          git add -f static/
           
           if git diff --quiet && git diff --staged --quiet; then
-            echo "没有静态资源变动"
+            echo "No changes in static files."
           else
-            # 加上 [skip ci] 防止触发自身
-            git commit -m "chore: 自动更新前端产物 [skip ci]"
+            # [skip ci] 确保不会再次触发构建
+            git commit -m "chore: auto-update frontend static [skip ci]"
             git push
           fi
