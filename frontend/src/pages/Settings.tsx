@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Form, Input, Button, Select, Slider, InputNumber, message, Space, Typography, Spin, Modal, Tooltip, Alert, Grid, Tabs, List, Tag, Popconfirm, Empty, Row, Col } from 'antd';
+import { Card, Form, Input, Button, Select, Slider, InputNumber, message, Space, Typography, Spin, Modal, Alert, Grid, Tabs, List, Tag, Popconfirm, Empty, Row, Col } from 'antd';
 import { SettingOutlined, SaveOutlined, DeleteOutlined, ReloadOutlined, ArrowLeftOutlined, InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, PlusOutlined, EditOutlined, CopyOutlined } from '@ant-design/icons';
 import { settingsApi } from '../services/api';
 import type { SettingsUpdate, APIKeyPreset, PresetCreateRequest, APIKeyPresetConfig } from '../types';
@@ -107,9 +107,10 @@ export default function SettingsPage() {
   };
 
   const handleReset = () => {
-    Modal.confirm({
+    modal.confirm({
       title: '重置设置',
       content: '确定要重置为默认值吗？',
+      centered: true,
       okText: '确定',
       cancelText: '取消',
       onOk: () => {
@@ -127,9 +128,10 @@ export default function SettingsPage() {
   };
 
   const handleDelete = () => {
-    Modal.confirm({
+    modal.confirm({
       title: '删除设置',
       content: '确定要删除所有设置吗？此操作不可恢复。',
+      centered: true,
       okText: '确定',
       cancelText: '取消',
       okType: 'danger',
@@ -150,10 +152,9 @@ export default function SettingsPage() {
   };
 
   const apiProviders = [
-    { value: 'openai', label: 'OpenAl Compatible', defaultUrl: 'https://api.openai.com/v1' },
-    // { value: 'azure', label: 'Azure OpenAI', defaultUrl: 'https://YOUR-RESOURCE.openai.azure.com' },
-    // { value: 'anthropic', label: 'Anthropic', defaultUrl: 'https://api.anthropic.com' },
-    // { value: 'custom', label: '自定义', defaultUrl: '' },
+    { value: 'openai', label: 'OpenAI Compatible', defaultUrl: 'https://api.openai.com/v1' },
+    // { value: 'anthropic', label: 'Anthropic (Claude)', defaultUrl: 'https://api.anthropic.com' },
+    { value: 'gemini', label: 'Google Gemini', defaultUrl: 'https://generativelanguage.googleapis.com/v1beta' },
   ];
 
   const handleProviderChange = (value: string) => {
@@ -483,8 +484,8 @@ export default function SettingsPage() {
     switch (provider) {
       case 'openai':
         return 'blue';
-      case 'anthropic':
-        return 'purple';
+      // case 'anthropic':
+      //   return 'purple';
       case 'gemini':
         return 'green';
       default:
@@ -543,16 +544,15 @@ export default function SettingsPage() {
                         激活
                       </Button>
                     ),
-                    <Tooltip title="测试连接">
-                      <Button
-                        type="link"
-                        icon={<ThunderboltOutlined />}
-                        loading={testingPresetId === preset.id}
-                        onClick={() => handlePresetTest(preset.id)}
-                      >
-                        测试
-                      </Button>
-                    </Tooltip>,
+                    <Button
+                      key="test"
+                      type="link"
+                      icon={<ThunderboltOutlined />}
+                      loading={testingPresetId === preset.id}
+                      onClick={() => handlePresetTest(preset.id)}
+                    >
+                      测试
+                    </Button>,
                     <Button
                       type="link"
                       icon={<EditOutlined />}
@@ -765,9 +765,10 @@ export default function SettingsPage() {
                             label={
                               <Space size={4}>
                                 <span>API 提供商</span>
-                                <Tooltip title="选择你的AI服务提供商">
-                                  <InfoCircleOutlined style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }} />
-                                </Tooltip>
+                                <InfoCircleOutlined
+                                  title="选择你的AI服务提供商"
+                                  style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }}
+                                />
                               </Space>
                             }
                             name="api_provider"
@@ -786,9 +787,10 @@ export default function SettingsPage() {
                             label={
                               <Space size={4}>
                                 <span>API 密钥</span>
-                                <Tooltip title="你的API密钥，将加密存储">
-                                  <InfoCircleOutlined style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }} />
-                                </Tooltip>
+                                <InfoCircleOutlined
+                                  title="你的API密钥，将加密存储"
+                                  style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }}
+                                />
                               </Space>
                             }
                             name="api_key"
@@ -805,9 +807,10 @@ export default function SettingsPage() {
                             label={
                               <Space size={4}>
                                 <span>API 地址</span>
-                                <Tooltip title="API的基础URL地址">
-                                  <InfoCircleOutlined style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }} />
-                                </Tooltip>
+                                <InfoCircleOutlined
+                                  title="API的基础URL地址"
+                                  style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }}
+                                />
                               </Space>
                             }
                             name="api_base_url"
@@ -826,9 +829,10 @@ export default function SettingsPage() {
                             label={
                               <Space size={4}>
                                 <span>模型名称</span>
-                                <Tooltip title="AI模型的名称，如 gpt-4, gpt-3.5-turbo">
-                                  <InfoCircleOutlined style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }} />
-                                </Tooltip>
+                                <InfoCircleOutlined
+                                  title="AI模型的名称，如 gpt-4, gpt-3.5-turbo"
+                                  style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }}
+                                />
                               </Space>
                             }
                             name="llm_model"
@@ -930,9 +934,10 @@ export default function SettingsPage() {
                             label={
                               <Space size={4}>
                                 <span>温度参数</span>
-                                <Tooltip title="控制输出的随机性，值越高越随机（0.0-2.0）">
-                                  <InfoCircleOutlined style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }} />
-                                </Tooltip>
+                                <InfoCircleOutlined
+                                  title="控制输出的随机性，值越高越随机（0.0-2.0）"
+                                  style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }}
+                                />
                               </Space>
                             }
                             name="temperature"
@@ -954,9 +959,10 @@ export default function SettingsPage() {
                             label={
                               <Space size={4}>
                                 <span>最大 Token 数</span>
-                                <Tooltip title="单次请求的最大token数量">
-                                  <InfoCircleOutlined style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }} />
-                                </Tooltip>
+                                <InfoCircleOutlined
+                                  title="单次请求的最大token数量"
+                                  style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }}
+                                />
                               </Space>
                             }
                             name="max_tokens"
@@ -970,6 +976,27 @@ export default function SettingsPage() {
                               style={{ width: '100%' }}
                               min={1}
                               placeholder="2000"
+                            />
+                          </Form.Item>
+
+                          <Form.Item
+                            label={
+                              <Space size={4}>
+                                <span>系统提示词</span>
+                                <InfoCircleOutlined
+                                  title="设置全局系统提示词，每次AI调用时都会自动使用。可用于设定AI的角色、语言风格等"
+                                  style={{ color: 'var(--color-text-secondary)', fontSize: isMobile ? '12px' : '14px' }}
+                                />
+                              </Space>
+                            }
+                            name="system_prompt"
+                          >
+                            <TextArea
+                              rows={4}
+                              placeholder="例如：你是一个专业的小说创作助手，请用生动、细腻的文字进行创作..."
+                              maxLength={10000}
+                              showCount
+                              style={{ fontSize: isMobile ? '13px' : '14px' }}
                             />
                           </Form.Item>
 
@@ -1247,7 +1274,7 @@ export default function SettingsPage() {
             >
               <Select>
                 <Select.Option value="openai">OpenAI</Select.Option>
-                <Select.Option value="anthropic">Anthropic (Claude)</Select.Option>
+                {/* <Select.Option value="anthropic">Anthropic (Claude)</Select.Option> */}
                 <Select.Option value="gemini">Google Gemini</Select.Option>
               </Select>
             </Form.Item>
@@ -1296,6 +1323,18 @@ export default function SettingsPage() {
                 max={100000}
                 style={{ width: '100%' }}
                 placeholder="2000"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="system_prompt"
+              label="系统提示词"
+            >
+              <TextArea
+                rows={3}
+                placeholder="例如：你是一个专业的小说创作助手...（可选）"
+                maxLength={10000}
+                showCount
               />
             </Form.Item>
           </Form>

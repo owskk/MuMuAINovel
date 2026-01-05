@@ -148,6 +148,9 @@ export const authApi = {
   setPassword: (password: string) =>
     api.post<unknown, { success: boolean; message: string }>('/auth/password/set', { password }),
 
+  initializePassword: (password: string) =>
+    api.post<unknown, { success: boolean; message: string }>('/auth/password/initialize', { password }),
+
   refreshSession: () => api.post<unknown, { message: string; expire_at: number; remaining_minutes: number }>('/auth/refresh'),
 
   logout: () => api.post('/auth/logout'),
@@ -464,6 +467,80 @@ export const characterApi = {
 
   generateCharacter: (data: GenerateCharacterRequest) =>
     api.post<unknown, Character>('/characters/generate', data),
+
+  // 导出角色/组织
+  exportCharacters: async (characterIds: string[]) => {
+    const response = await axios.post(
+      '/api/characters/export',
+      { character_ids: characterIds },
+      {
+        responseType: 'blob',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    // 从响应头获取文件名
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = 'characters_export.json';
+    if (contentDisposition) {
+      const matches = /filename=(.+)/.exec(contentDisposition);
+      if (matches && matches[1]) {
+        filename = matches[1];
+      }
+    }
+
+    // 创建下载链接
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  // 验证导入文件
+  validateImportCharacters: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<unknown, {
+      valid: boolean;
+      version: string;
+      statistics: { characters: number; organizations: number };
+      errors: string[];
+      warnings: string[];
+    }>('/characters/validate-import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  // 导入角色/组织
+  importCharacters: (projectId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<unknown, {
+      success: boolean;
+      message: string;
+      statistics: {
+        total: number;
+        imported: number;
+        skipped: number;
+        errors: number;
+      };
+      details: {
+        imported_characters: string[];
+        imported_organizations: string[];
+        skipped: string[];
+        errors: string[];
+      };
+      warnings: string[];
+    }>(`/characters/import?project_id=${projectId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export const chapterApi = {
@@ -556,6 +633,24 @@ export const inspirationApi = {
       options: string[];
       error?: string;
     }>('/inspiration/generate-options', data),
+
+  // 基于用户反馈重新生成选项（新增）
+  refineOptions: (data: {
+    step: 'title' | 'description' | 'theme' | 'genre';
+    context: {
+      initial_idea?: string;
+      title?: string;
+      description?: string;
+      theme?: string;
+    };
+    feedback: string;
+    previous_options?: string[];
+  }) =>
+    api.post<unknown, {
+      prompt?: string;
+      options: string[];
+      error?: string;
+    }>('/inspiration/refine-options', data),
 
   // 智能补全缺失信息
   quickGenerate: (data: {

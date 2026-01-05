@@ -74,6 +74,11 @@ services:
       # 数据库配置
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-mumuai}:${POSTGRES_PASSWORD:-123456}@postgres:5432/${POSTGRES_DB:-mumuai_novel}
       
+      # 数据库连接信息（用于 entrypoint.sh）
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-123456}
+      
       # PostgreSQL 连接池配置
       - DATABASE_POOL_SIZE=${DATABASE_POOL_SIZE:-30}
       - DATABASE_MAX_OVERFLOW=${DATABASE_MAX_OVERFLOW:-20}
@@ -97,7 +102,7 @@ services:
       - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER:-openai}
       - DEFAULT_MODEL=${DEFAULT_MODEL:-gpt-4o-mini}
       - DEFAULT_TEMPERATURE=${DEFAULT_TEMPERATURE:-0.7}
-      - DEFAULT_MAX_TOKENS=${DEFAULT_MAX_TOKENS:-2000}
+      - DEFAULT_MAX_TOKENS=${DEFAULT_MAX_TOKENS:-32000}
       
       # LinuxDO OAuth 配置
       - LINUXDO_CLIENT_ID=${LINUXDO_CLIENT_ID:-11111}
